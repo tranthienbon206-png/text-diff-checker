@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ so sánh văn bản Online miễn phí</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+        }
+
+        .brand {
+            background: #fdca1e;
+        }
+
+        .brand:hover {
+            background: #f2bd08;
+        }
+
+        .focus-brand:focus {
+            outline: none;
+            border-color: #fdca1e;
+            box-shadow: 0 0 0 3px #fdca1e35;
+        }
+
+        .diff-row {
+            display: flex;
+            gap: 10px;
+            padding: 7px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .diff-row.added {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .diff-row.removed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .diff-row.same {
+            background: white;
+            color: #475569;
+        }
+
+        .diff-symbol {
+            width: 16px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .diff-content {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .diff-number {
+            color: #94a3b8;
+            min-width: 25px;
+            text-align: right;
+            user-select: none;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-slate-800">
+    <main class="max-w-5xl mx-auto px-4 py-7 sm:py-10">
+
+        <header class="mb-6">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="brand w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold">≠</div>
+                <span class="font-bold text-lg">Text Diff Checker</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">
+                Công cụ so sánh văn bản
+            </h1>
+            <p class="text-slate-500 text-sm sm:text-base mt-2">
+                So sánh hai nội dung và nhanh chóng tìm ra những điểm khác biệt.
+            </p>
+        </header>
+
+        <section class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm mb-5">
+            <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+                <h2 class="font-bold text-lg">Nội dung cần so sánh</h2>
+                <button id="sampleBtn" class="text-sm font-semibold text-slate-600 hover:text-black">
+                    Tải dữ liệu mẫu
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="originalText" class="font-semibold text-sm">Văn bản gốc</label>
+                        <button id="clearOriginal" class="text-xs text-slate-400 hover:text-red-500">Xóa</button>
+                    </div>
+                    <textarea id="originalText" rows="9" maxlength="150000"
+                        placeholder="Nhập hoặc dán văn bản gốc tại đây..."
+                        class="focus-brand w-full border border-slate-300 rounded-xl p-3 text-sm leading-6">Xin chào các bạn.
+Công cụ này giúp so sánh văn bản.
+Bạn có thể kiểm tra nội dung dễ dàng.</textarea>
+                    <p class="text-xs text-slate-400 mt-1">
+                        <span id="originalCount">0</span> ký tự
+                    </p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="changedText" class="font-semibold text-sm">Văn bản mới</label>
+                        <button id="clearChanged" class="text-xs text-slate-400 hover:text-red-500">Xóa</button>
+                    </div>
+                    <textarea id="changedText" rows="9" maxlength="150000"
+                        placeholder="Nhập hoặc dán văn bản mới tại đây..."
+                        class="focus-brand w-full border border-slate-300 rounded-xl p-3 text-sm leading-6">Xin chào mọi người.
+Công cụ này giúp so sánh hai văn bản.
+Bạn có thể kiểm tra nội dung nhanh chóng.</textarea>
+                    <p class="text-xs text-slate-400 mt-1">
+                        <span id="changedCount">0</span> ký tự
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-center">
+                <button id="swapBtn"
+                    class="border border-slate-300 rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                    ⇄ Đổi vị trí hai văn bản
+                </button>
+            </div>
+
+            <div class="border-t border-slate-100 mt-5 pt-5">
+                <h3 class="font-semibold text-sm mb-3">Tùy chọn so sánh</h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="compareMode" class="block text-sm font-medium mb-2">So sánh theo</label>
+                        <select id="compareMode"
+                            class="focus-brand w-full border border-slate-300 rounded-lg px-3 py-3 bg-white text-sm">
+                            <option value="line">Dòng</option>
+                            <option value="word">Từ</option>
+                            <option value="char">Ký tự</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tùy chỉnh</label>
+                        <div class="flex flex-wrap gap-4 pt-2">
+                            <label class="flex items-center gap-2 text-sm">
+                                <input id="ignoreCase" type="checkbox" class="accent-yellow-500">
+                                Bỏ qua chữ hoa/thường
+                            </label>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input id="ignoreSpace" type="checkbox" class="accent-yellow-500">
+                                Bỏ qua khoảng trắng
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="compareBtn" class="brand w-full rounded-lg py-3 mt-5 font-bold text-slate-900">
+                    So sánh văn bản
+                </button>
+                <p id="errorMessage" class="hidden text-sm text-red-600 mt-3"></p>
+            </div>
+        </section>
+
+        <section id="resultSection"
+            class="hidden bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm mb-5">
+            <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+                <div>
+                    <h2 class="font-bold text-lg">Kết quả so sánh</h2>
+                    <p class="text-xs text-slate-500 mt-1">Các nội dung khác biệt được đánh dấu màu sắc.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="copyBtn"
+                        class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-50">
+                        Sao chép
+                    </button>
+                    <button id="downloadBtn" class="brand rounded-lg px-3 py-2 text-sm font-semibold">
+                        Tải kết quả
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-5">
+                <div class="bg-green-50 rounded-lg p-3 text-center">
+                    <p id="addedCount" class="text-xl font-bold text-green-700">0</p>
+                    <p class="text-xs text-green-700">Đã thêm</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-3 text-center">
+                    <p id="removedCount" class="text-xl font-bold text-red-700">0</p>
+                    <p class="text-xs text-red-700">Đã xóa</p>
+                </div>
+                <div class="bg-slate-100 rounded-lg p-3 text-center">
+                    <p id="sameCount" class="text-xl font-bold text-slate-700">0</p>
+                    <p class="text-xs text-slate-600">Không đổi</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4 text-xs mb-3">
+                <span class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm bg-green-200"></span> Nội dung được thêm
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm bg-red-200"></span> Nội dung bị xóa
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm bg-slate-200"></span> Nội dung giữ nguyên
+                </span>
+            </div>
+
+            <div id="diffResult" class="border border-slate-200 rounded-lg overflow-hidden"></div>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+            <h2 class="font-bold text-lg mb-4">Hướng dẫn sử dụng</h2>
+            <div class="space-y-3 text-sm text-slate-600 leading-6">
+                <p><strong class="text-slate-800">Bước 1:</strong> Nhập văn bản gốc và văn bản mới vào hai khung.</p>
+                <p><strong class="text-slate-800">Bước 2:</strong> Chọn cách so sánh theo dòng, từ hoặc ký tự.</p>
+                <p><strong class="text-slate-800">Bước 3:</strong> Chọn bỏ qua chữ hoa/thường hoặc khoảng trắng nếu cần.
+                </p>
+                <p><strong class="text-slate-800">Bước 4:</strong> Nhấn So sánh văn bản để xem những phần được thêm, xóa
+                    hoặc giữ nguyên.</p>
+                <p><strong class="text-slate-800">Bước 5:</strong> Sao chép hoặc tải kết quả về máy.</p>
+            </div>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm mt-5">
+            <h2 class="font-bold text-lg mb-3">Công cụ so sánh văn bản là gì?</h2>
+            <p class="text-sm text-slate-600 leading-7">
+                Đây là công cụ giúp tìm ra sự khác biệt giữa hai phiên bản nội dung.
+                Bạn có thể sử dụng để kiểm tra bài tập, báo cáo, tài liệu hoặc mã nguồn
+                sau khi chỉnh sửa. Nội dung được xử lý ngay trên trình duyệt, không cần
+                tải lên máy chủ.
+            </p>
+        </section>
+
+        <p class="text-center text-xs text-slate-400 mt-6">
+            Text Diff Checker - Công cụ so sánh văn bản trực tuyến
+        </p>
+    </main>
+
+    <script>
+        const $ = id => document.getElementById(id);
+
+        let lastDiff = [];
+
+        function gbCopy(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Đã sao chép thành công!');
+            }).catch(() => {
+                const area = document.createElement('textarea');
+                area.value = text;
+                area.style.position = 'fixed';
+                area.style.opacity = '0';
+                document.body.appendChild(area);
+                area.select();
+                const success = document.execCommand('copy');
+                area.remove();
+                alert(success ? 'Đã sao chép thành công!' : 'Không thể sao chép.');
+            });
+        }
+
+        function gbDownload(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function updateCounts() {
+            $('originalCount').textContent = $('originalText').value.length.toLocaleString('vi-VN');
+            $('changedCount').textContent = $('changedText').value.length.toLocaleString('vi-VN');
+        }
+
+        function tokenize(text, mode) {
+            if (mode === 'line') return text.split('\n');
+            if (mode === 'word') return text.match(/\s+|[^\s]+/gu) || [];
+            return Array.from(text);
+        }
+
+        function normalize(value) {
+            let result = value;
+
+            if ($('ignoreCase').checked) {
+                result = result.toLocaleLowerCase();
+            }
+
+            if ($('ignoreSpace').checked) {
+                result = result.replace(/\s+/gu, '');
+            }
+
+            return result;
+        }
+
+        function buildDiff(original, changed) {
+            const mode = $('compareMode').value;
+            const a = tokenize(original, mode);
+            const b = tokenize(changed, mode);
+
+            if (a.length > 1500 || b.length > 1500) {
+                throw new Error('Nội dung quá dài để so sánh. Vui lòng giảm số lượng xuống tối đa 1.500 đơn vị mỗi bên.');
+            }
+
+            const n = a.length;
+            const m = b.length;
+
+            const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+
+            for (let i = n - 1; i >= 0; i--) {
+                for (let j = m - 1; j >= 0; j--) {
+                    if (normalize(a[i]) === normalize(b[j])) {
+                        dp[i][j] = dp[i + 1][j + 1] + 1;
+                    } else {
+                        dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+                    }
+                }
+            }
+
+            const result = [];
+            let i = 0;
+            let j = 0;
+
+            while (i < n && j < m) {
+                if (normalize(a[i]) === normalize(b[j])) {
+                    result.push({ type: 'same', value: a[i] });
+                    i++;
+                    j++;
+                } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+                    result.push({ type: 'removed', value: a[i] });
+                    i++;
+                } else {
+                    result.push({ type: 'added', value: b[j] });
+                    j++;
+                }
+            }
+
+            while (i < n) {
+                result.push({ type: 'removed', value: a[i] });
+                i++;
+            }
+
+            while (j < m) {
+                result.push({ type: 'added', value: b[j] });
+                j++;
+            }
+
+            return result;
+        }
+
+        function renderDiff(diff) {
+            const container = $('diffResult');
+            container.innerHTML = '';
+
+            let added = 0;
+            let removed = 0;
+            let same = 0;
+            let lineNumber = 1;
+
+            diff.forEach(item => {
+                if (item.type === 'added') added++;
+                else if (item.type === 'removed') removed++;
+                else same++;
+
+                const row = document.createElement('div');
+                row.className = 'diff-row ' + item.type;
+
+                const number = document.createElement('span');
+                number.className = 'diff-number';
+                number.textContent = lineNumber++;
+
+                const symbol = document.createElement('span');
+                symbol.className = 'diff-symbol';
+                symbol.textContent =
+                    item.type === 'added' ? '+' :
+                        item.type === 'removed' ? '-' : ' ';
+
+                const content = document.createElement('span');
+                content.className = 'diff-content';
+                content.textContent = item.value === '' ? ' ' : item.value;
+
+                row.append(number, symbol, content);
+                container.appendChild(row);
+            });
+
+            $('addedCount').textContent = added.toLocaleString('vi-VN');
+            $('removedCount').textContent = removed.toLocaleString('vi-VN');
+            $('sameCount').textContent = same.toLocaleString('vi-VN');
+
+            $('resultSection').classList.remove('hidden');
+
+            if (diff.length === 0) {
+                container.textContent = 'Hai văn bản giống nhau.';
+            }
+        }
+
+        function compareTexts() {
+            $('errorMessage').classList.add('hidden');
+
+            const original = $('originalText').value;
+            const changed = $('changedText').value;
+
+            if (!original.trim() && !changed.trim()) {
+                $('errorMessage').textContent = 'Vui lòng nhập nội dung vào hai khung để so sánh.';
+                $('errorMessage').classList.remove('hidden');
+                $('resultSection').classList.add('hidden');
+                return;
+            }
+
+            try {
+                lastDiff = buildDiff(original, changed);
+                renderDiff(lastDiff);
+            } catch (error) {
+                $('errorMessage').textContent = error.message;
+                $('errorMessage').classList.remove('hidden');
+                $('resultSection').classList.add('hidden');
+            }
+        }
+
+        $('compareBtn').addEventListener('click', compareTexts);
+
+        $('originalText').addEventListener('input', updateCounts);
+        $('changedText').addEventListener('input', updateCounts);
+
+        $('swapBtn').addEventListener('click', () => {
+            const original = $('originalText').value;
+            $('originalText').value = $('changedText').value;
+            $('changedText').value = original;
+            updateCounts();
+        });
+
+        $('clearOriginal').addEventListener('click', () => {
+            $('originalText').value = '';
+            updateCounts();
+        });
+
+        $('clearChanged').addEventListener('click', () => {
+            $('changedText').value = '';
+            updateCounts();
+        });
+
+        $('sampleBtn').addEventListener('click', () => {
+            $('originalText').value =
+                'Xin chào các bạn.\nCông cụ này giúp so sánh văn bản.\nBạn có thể kiểm tra nội dung dễ dàng.';
+
+            $('changedText').value =
+                'Xin chào mọi người.\nCông cụ này giúp so sánh hai văn bản.\nBạn có thể kiểm tra nội dung nhanh chóng.';
+
+            updateCounts();
+            compareTexts();
+        });
+
+        $('copyBtn').addEventListener('click', () => {
+            if (!lastDiff.length) return;
+
+            const text = lastDiff.map(item => {
+                const prefix = item.type === 'added' ? '+ ' :
+                    item.type === 'removed' ? '- ' : '  ';
+                return prefix + item.value;
+            }).join('');
+
+            gbCopy(text);
+        });
+
+        $('downloadBtn').addEventListener('click', () => {
+            if (!lastDiff.length) return;
+
+            const text = [
+                'KẾT QUẢ SO SÁNH VĂN BẢN',
+                '========================',
+                '',
+                'Văn bản gốc:',
+                $('originalText').value,
+                '',
+                'Văn bản mới:',
+                $('changedText').value,
+                '',
+                'KẾT QUẢ KHÁC BIỆT:',
+                ...lastDiff.map(item => {
+                    const prefix = item.type === 'added' ? '+ ' :
+                        item.type === 'removed' ? '- ' : '  ';
+                    return prefix + item.value;
+                })
+            ].join('\n');
+
+            gbDownload(text, 'ket-qua-so-sanh.txt');
+        });
+
+        updateCounts();
+        compareTexts();
+    </script>
+</body>
+
+</html>
